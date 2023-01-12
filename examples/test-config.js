@@ -1,4 +1,4 @@
-import tracing, { Http } from 'k6/x/tracing';
+import tracing, { Http } from 'k6/x/tracetest';
 import { sleep } from 'k6';
 
 export let options = {

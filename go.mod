@@ -1,4 +1,4 @@
-module github.com/grafana/xk6-distributed-tracing
+module github.com/xoscar/xk6-tracetest-tracing
 
 go 1.17
 
