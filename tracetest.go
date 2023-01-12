@@ -4,23 +4,17 @@ import (
 	"fmt"
 
 	"github.com/dop251/goja"
-	crocospans "github.com/xoscar/xk6-tracetest-tracing/cloud"
 	"github.com/xoscar/xk6-tracetest-tracing/models"
 	clientService "github.com/xoscar/xk6-tracetest-tracing/services/client"
 	"go.k6.io/k6/js/common"
 	"go.k6.io/k6/js/modules"
 	k6HTTP "go.k6.io/k6/js/modules/k6/http"
-	"go.k6.io/k6/output"
 )
 
 const version = "0.2.0"
 
 func init() {
 	modules.Register("k6/x/tracetest", New())
-
-	output.RegisterExtension("xk6-crocospans", func(p output.Params) (output.Output, error) {
-		return crocospans.New(p)
-	})
 }
 
 type (

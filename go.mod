@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/dop251/goja v0.0.0-20221003171542-5ea1285e6c91
 	go.k6.io/k6 v0.40.1-0.20221020144551-8a74171c8b43
-	google.golang.org/protobuf v1.28.0
 )
 
 require (
@@ -17,7 +16,6 @@ require (
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4-0.20211119122758-180fcef48034+incompatible // indirect
-	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -29,7 +27,7 @@ require (
 	github.com/onsi/gomega v1.20.2 // indirect
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/serenize/snaker v0.0.0-20201027110005-a7ad2135616e // indirect
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
 	github.com/tidwall/gjson v1.14.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
