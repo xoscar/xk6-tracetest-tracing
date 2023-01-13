@@ -1,103 +1,24 @@
-package tracing
+package tracetest
 
 import (
-	"fmt"
-
-	"github.com/dop251/goja"
-	"github.com/xoscar/xk6-tracetest-tracing/models"
-	clientService "github.com/xoscar/xk6-tracetest-tracing/services/client"
-	"go.k6.io/k6/js/common"
+	"github.com/xoscar/xk6-tracetest-tracing/modules/instance"
 	"go.k6.io/k6/js/modules"
-	k6HTTP "go.k6.io/k6/js/modules/k6/http"
 )
-
-const version = "0.2.0"
 
 func init() {
 	modules.Register("k6/x/tracetest", New())
 }
 
 type (
-	// RootModule is the global module instance that will create DistributedTracing
-	// instances for each VU.
 	RootModule struct{}
-
-	DistributedTracing struct {
-		// modules.VU provides some useful methods for accessing internal k6
-		// objects like the global context, VU state and goja runtime.
-		vu          modules.VU
-		httpRequest clientService.HttpRequestFunc
-	}
 )
 
-// Ensure the interfaces are implemented correctly.
-var (
-	_ modules.Instance = &DistributedTracing{}
-	_ modules.Module   = &RootModule{}
-)
+var _ modules.Module = &RootModule{}
 
-// New returns a pointer to a new RootModule instance.
 func New() *RootModule {
 	return &RootModule{}
 }
 
-// NewModuleInstance implements the modules.Module interface and returns
-// a new instance for each VU.
 func (*RootModule) NewModuleInstance(vu modules.VU) modules.Instance {
-	r := k6HTTP.New().NewModuleInstance(vu).Exports().Default.(*goja.Object).Get("request")
-	var requestFunc clientService.HttpRequestFunc
-	err := vu.Runtime().ExportTo(r, &requestFunc)
-	if err != nil {
-		panic(err)
-	}
-	return &DistributedTracing{vu: vu, httpRequest: requestFunc}
-}
-
-// Exports implements the modules.Instance interface and returns the exports
-// of the JS module.
-func (c *DistributedTracing) Exports() modules.Exports {
-	return modules.Exports{
-		Named: map[string]interface{}{
-			"Http":    c.http,
-			"version": version,
-		},
-	}
-}
-
-var defaultPropagatorList = []models.PropagatorName{
-	models.PropagatorW3C,
-}
-
-func (t *DistributedTracing) parseClientOptions(val goja.Value) (clientService.Options, error) {
-	rt := t.vu.Runtime()
-	opts := clientService.Options{
-		Propagator: models.NewPropagator(defaultPropagatorList),
-	}
-
-	if val == nil || goja.IsUndefined(val) || goja.IsNull(val) {
-		return opts, nil
-	}
-
-	params := val.ToObject(rt)
-	for _, k := range params.Keys() {
-		switch k {
-		case "propagator":
-			fmt.Println("propagator", params.Get(k).ToString().String())
-			opts.Propagator = models.NewPropagator([]models.PropagatorName{models.PropagatorName(params.Get(k).ToString().String())})
-			//TODO: validate
-		default:
-			return opts, fmt.Errorf("unknown HTTP tracing option '%s'", k)
-		}
-	}
-	return opts, nil
-}
-
-func (t *DistributedTracing) http(call goja.ConstructorCall) *goja.Object {
-	rt := t.vu.Runtime()
-	opts, err := t.parseClientOptions(call.Argument(0))
-	if err != nil {
-		common.Throw(rt, err)
-	}
-
-	return rt.ToValue(clientService.New(t.vu, t.httpRequest, opts)).ToObject(rt)
+	return instance.New(vu)
 }
