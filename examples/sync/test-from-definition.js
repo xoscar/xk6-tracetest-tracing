@@ -28,20 +28,14 @@ spec:
     value: attr:db.result | json_path '.id'
 `;
 
-const http = new Http({ propagator: ["w3c", "b3"] });
+const http = new Http({
+  propagator: ["w3c", "b3"],
+});
 const tracetest = new Tracetest();
 
 export default function () {
   const response = http.get("https://test-api.k6.io");
-  const run = tracetest.runFromDefinition(testDefinition, r.trace_id);
-
-  console.log("~~~~~~~~~~");
-  console.log("response.trace_id = ", response.trace_id);
-  console.log("run.test.id =", run.test.id);
-  console.log("run.test.id =", run.test_run.id); 
-  console.log("run.test_run.trace_id =", run.test_run.trace_id);
-  console.log("~~~~~~~~~~");
-  console.log("");
+  tracetest.syncRunTestFromDefinition(testDefinition, response.trace_id);
 
   sleep(1);
 }

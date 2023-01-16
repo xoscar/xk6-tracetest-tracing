@@ -17,8 +17,8 @@ func RandHexStringRunes(n int) string {
 	return string(b)
 }
 
-func ParseOptions(vu modules.VU, val goja.Value) map[string]string {
-	options := make(map[string]string)
+func ParseOptions(vu modules.VU, val goja.Value) map[string]goja.Value {
+	options := make(map[string]goja.Value)
 	rt := vu.Runtime()
 
 	if IsNilly(val) {
@@ -27,7 +27,7 @@ func ParseOptions(vu modules.VU, val goja.Value) map[string]string {
 
 	params := val.ToObject(rt)
 	for _, k := range params.Keys() {
-		options[k] = params.Get(k).ToString().String()
+		options[k] = params.Get(k)
 	}
 
 	return options

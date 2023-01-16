@@ -5,15 +5,10 @@ import (
 	"net/http"
 
 	"github.com/dop251/goja"
-	"github.com/xoscar/xk6-tracetest-tracing/models"
 	"go.k6.io/k6/js/common"
 	"go.k6.io/k6/js/modules"
 	k6HTTP "go.k6.io/k6/js/modules/k6/http"
 )
-
-type Options struct {
-	Propagator models.Propagator
-}
 
 type HttpClient struct {
 	vu          modules.VU

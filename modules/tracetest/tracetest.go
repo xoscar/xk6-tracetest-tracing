@@ -1,25 +1,41 @@
 package tracetest
 
 import (
+	"sync"
+	"time"
+
 	"github.com/dop251/goja"
+	"github.com/sirupsen/logrus"
 	"github.com/xoscar/xk6-tracetest-tracing/models"
 	"go.k6.io/k6/js/modules"
+	"go.k6.io/k6/output"
 )
 
 type Tracetest struct {
-	vu modules.VU
+	Vu              modules.VU
+	bufferLock      sync.Mutex
+	buffer          []Job
+	periodicFlusher *output.PeriodicFlusher
+	logger          logrus.FieldLogger
 }
 
-type NewFunc func(call goja.ConstructorCall) *goja.Object
-
-func New(vu modules.VU) *Tracetest {
-	return &Tracetest{
-		vu: vu,
+func New() *Tracetest {
+	logger := *logrus.New()
+	tracetest := &Tracetest{
+		buffer: []Job{},
+		logger: logger.WithField("component", "xk6-tracetest-tracing"),
 	}
+
+	duration := 3 * time.Second
+	periodicFlusher, _ := output.NewPeriodicFlusher(duration, tracetest.processQueue)
+
+	tracetest.periodicFlusher = periodicFlusher
+
+	return tracetest
 }
 
 func (t *Tracetest) Constructor(call goja.ConstructorCall) *goja.Object {
-	rt := t.vu.Runtime()
+	rt := t.Vu.Runtime()
 	isCliInstalled := t.getIsCliInstalled()
 
 	if !isCliInstalled {
@@ -29,18 +45,26 @@ func (t *Tracetest) Constructor(call goja.ConstructorCall) *goja.Object {
 	return rt.ToValue(t).ToObject(rt)
 }
 
-func (t *Tracetest) RunTest(testID, traceID string) (*models.TracetestRun, error) {
-	definitionFileName, err := t.exportTest(testID)
-	if err != nil {
-		return nil, err
-	}
-
-	run, err := t.runTest(definitionFileName, traceID)
-	return run, err
+func (t *Tracetest) RunTest(testID, traceID string) {
+	t.queueJob(Job{
+		traceID: traceID,
+		testID:  testID,
+		jobType: RunTestFromId,
+	})
 }
 
-func (t *Tracetest) RunFromDefinition(testDefinition, traceID string) (*models.TracetestRun, error) {
-	run, err := t.runFromDefinition(testDefinition, traceID)
+func (t *Tracetest) RunFromDefinition(testDefinition, traceID string) {
+	t.queueJob(Job{
+		traceID:    traceID,
+		definition: testDefinition,
+		jobType:    RunTestFromDefinition,
+	})
+}
 
-	return run, err
+func (t *Tracetest) SyncRunTest(testID, traceID string) (*models.TracetestRun, error) {
+	return t.runFromId(testID, traceID)
+}
+
+func (t *Tracetest) SyncRunTestFromDefinition(testDefinition, traceID string) (*models.TracetestRun, error) {
+	return t.runFromDefinition(testDefinition, traceID)
 }

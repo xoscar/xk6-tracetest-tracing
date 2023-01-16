@@ -8,19 +8,19 @@ import (
 
 var _ modules.Instance = &MainInstance{}
 
-const version = "0.2.0"
+const version = "0.1.0"
 
 type MainInstance struct {
 	vu         modules.VU
 	httpClient *httpClient.HttpClient
-	tracetest  *tracetest.Tracetest
+	Tracetest  *tracetest.Tracetest
 }
 
-func New(vu modules.VU) *MainInstance {
+func New(vu modules.VU, tracetest *tracetest.Tracetest) *MainInstance {
 	return &MainInstance{
 		vu:         vu,
 		httpClient: httpClient.New(vu),
-		tracetest:  tracetest.New(vu),
+		Tracetest:  tracetest,
 	}
 }
 
@@ -28,7 +28,7 @@ func (i *MainInstance) Exports() modules.Exports {
 	return modules.Exports{
 		Named: map[string]interface{}{
 			"Http":      i.httpClient.Constructor,
-			"Tracetest": i.tracetest.Constructor,
+			"Tracetest": i.Tracetest.Constructor,
 			"version":   version,
 		},
 	}

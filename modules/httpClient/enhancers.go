@@ -7,6 +7,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/xoscar/xk6-tracetest-tracing/models"
 	"github.com/xoscar/xk6-tracetest-tracing/utils"
+	"go.k6.io/k6/lib"
 	"go.k6.io/k6/metrics"
 )
 
@@ -57,16 +58,36 @@ func (c *HttpClient) WithTrace(fn HttpFunc, url goja.Value, args ...goja.Value) 
 		headers.Set(key, val)
 	}
 
-	// TODO: set span_id as well as some other metadata?
+	c.setTags(rt, state, traceID, params)
+	defer c.deleteTags(state)
+
+	res, err := fn(c.vu.Context(), url, args...)
+	return &HTTPResponse{Response: res, TraceID: traceID}, err
+}
+
+func (c *HttpClient) setTags(rt *goja.Runtime, state *lib.State, traceID string, params *goja.Object) {
+	tracetestOptions := parseTracetestOptions(rt, params)
 	state.Tags.Modify(func(tagsAndMeta *metrics.TagsAndMeta) {
 		tagsAndMeta.SetMetadata("trace_id", traceID)
+
+		if tracetestOptions.testID != "" {
+			tagsAndMeta.SetMetadata("test_id", tracetestOptions.testID)
+		} else if c.options.Tracetest.testID != "" {
+			tagsAndMeta.SetMetadata("test_id", c.options.Tracetest.testID)
+		}
+
+		if tracetestOptions.testDefinition != "" {
+			tagsAndMeta.SetMetadata("test_definition", tracetestOptions.testDefinition)
+		} else if c.options.Tracetest.testDefinition != "" {
+			tagsAndMeta.SetMetadata("test_definition", c.options.Tracetest.testDefinition)
+		}
 	})
-	defer state.Tags.Modify(func(tagsAndMeta *metrics.TagsAndMeta) {
+}
+
+func (c *HttpClient) deleteTags(state *lib.State) {
+	state.Tags.Modify(func(tagsAndMeta *metrics.TagsAndMeta) {
 		tagsAndMeta.DeleteMetadata("trace_id")
+		tagsAndMeta.DeleteMetadata("test_id")
+		tagsAndMeta.DeleteMetadata("test_definition")
 	})
-
-	// This calls the actual request() function from k6/http with our augmented arguments
-	res, e := fn(c.vu.Context(), url, args...)
-
-	return &HTTPResponse{Response: res, TraceID: traceID}, e
 }

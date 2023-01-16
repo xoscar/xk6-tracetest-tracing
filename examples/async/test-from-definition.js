@@ -1,3 +1,12 @@
+import { Http } from "k6/x/tracetest";
+import { sleep } from "k6";
+
+export const options = {
+  vus: 1,
+  duration: "10s",
+};
+
+const testDefinition = `
 type: Test
 spec:
   id: VyP0gJ2VR
@@ -11,9 +20,23 @@ spec:
       headers:
       - key: Content-Type
         value: application/json
-      body: '{"id":${env:POKEID}}'
+      body: '{"id":\${env:POKEID}}'
   outputs:
   - name: INSERTED_ID
     selector: span[tracetest.span.type="database" name="create pokeshop.pokemon" db.system="postgres"
       db.name="pokeshop" db.user="ashketchum" db.operation="create" db.sql.table="pokemon"]
     value: attr:db.result | json_path '.id'
+`;
+
+const http = new Http({
+  propagator: ["w3c", "b3"],
+  tracetest: {
+    testDefinition,
+  },
+});
+
+export default function () {
+  http.get("https://test-api.k6.io");
+
+  sleep(1);
+}
